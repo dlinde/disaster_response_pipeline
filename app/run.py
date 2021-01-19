@@ -27,8 +27,13 @@ from title_transformer import TitleCount
 
 
 def tokenize(text):
-    """
-    """
+    '''
+    Parameters:
+            text (string): A document to tokenize
+
+    Returns:
+            clean_tokens (dataframe): A list of tokens derived from text and cleaned
+    '''
 
     # initiate stop words
     stop_words = set(stopwords.words('english'))
@@ -158,12 +163,20 @@ def index():
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
+    '''
+
+    Returns:
+            render_template (): contains data required to build visualizations
+    '''
     # save user input in query
     query = request.args.get('query', '')
-
-    # use model to predict classification for query
-    classification_labels = model.predict([query])[0]
-    classification_results = dict(zip(Y.columns, classification_labels))
+    # convert the predictions to a dataframe then predict true for preds >.35, false otherwise, yielding a series
+    classification_labels = pd.DataFrame([model.predict_proba([query])],columns=Y.columns).T[0].map(
+        lambda x: 1 if x[0][1]>.35 else 0)
+    # sort ascending so positive preds appear first
+    classification_labels.sort_values(ascending=False,inplace=True)
+    # convert to dictionary and add child alone category, which had no cases in sample
+    classification_results = dict(zip(classification_labels.index, classification_labels.values))
     # no instances of child_alone in dataset so prediction always 0
     classification_results['child_alone']=0
 
