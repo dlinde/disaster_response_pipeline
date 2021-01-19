@@ -4,18 +4,33 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+    '''
+    Parameters:
+            messages_filepath (string): A filepath to dataframe with tweets
+            categories_filepath (string): A filepath to dataframe with disaster response category labels
+
+    Returns:
+            tweetdf (dataframe): A dataframe containing documents and labels
+    '''
     # load messages dataset
     messages = pd.read_csv(messages_filepath)
     # load categories dataset
     categories = pd.read_csv(categories_filepath)
     # merged datasets
-    df = messages.merge(categories,on='id')
-    return df
+    tweetdf = messages.merge(categories,on='id')
+    return tweetdf
 
 
-def clean_data(df):
+def clean_data(tweetdf):
+    '''
+    Parameters:
+            tweetdf (dataframe): A dataframe containing documents and labels
+
+    Returns:
+            tweetdf (dataframe): A datframe containing documents and revised column names for labels
+    '''
     # create a dataframe of the 36 individual category columns
-    categories = df.categories.str.split(';',expand=True)
+    categories = tweetdf.categories.str.split(';',expand=True)
     # select the first row of the categories dataframe
     row = categories.head(1)
 
@@ -30,16 +45,23 @@ def clean_data(df):
         # convert column from string to numeric
         categories[column] = categories[column].astype('int')
     # drop the original categories column from `df`
-    df.drop('categories',axis=1,inplace=True)
+    tweetdf.drop('categories',axis=1,inplace=True)
     # concatenate the original dataframe with the new `categories` dataframe
-    df = pd.concat([df,categories],axis=1)
+    tweetdf = pd.concat([tweetdf,categories],axis=1)
     # drop duplicates
-    df.drop_duplicates(inplace=True)
-    return df
+    tweetdf.drop_duplicates(inplace=True)
+    return tweetdf
 
-def save_data(df, database_filename):
+def save_data(tweetdf, database_filename, table_name='labeled_messages'):
+    '''
+    Parameters:
+            tweetdf (dataframe): A dataframe containing documents and labels
+            database_filename (string): A filepath for sqlite database
+            table_name (string): A name for tweetdf in db
+    '''
     engine = create_engine('sqlite:///'+database_filename)
-    df.to_sql('labeled_messages', engine, index=False)
+    tweetdf.to_sql(table_name, engine, index=False)
+    return
 
 
 def main():
@@ -49,13 +71,13 @@ def main():
 
         print('Loading data...\n    MESSAGES: {}\n    CATEGORIES: {}'
               .format(messages_filepath, categories_filepath))
-        df = load_data(messages_filepath, categories_filepath)
+        tweetdf = load_data(messages_filepath, categories_filepath)
 
         print('Cleaning data...')
-        df = clean_data(df)
+        tweetdf = clean_data(tweetdf)
 
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
-        save_data(df, database_filepath)
+        save_data(tweetdf, database_filepath)
 
         print('Cleaned data saved to database!')
 
