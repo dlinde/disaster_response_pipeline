@@ -25,24 +25,37 @@ from spellchecker import SpellChecker
 from title_transformer import TitleCount
 
 
-def load_data(database_filepath):
-    """
-    """
+def load_data(database_filepath,table_name='labeled_messages')):
+    '''
+    Parameters:
+            database_filepath (string): A filepath to a sqlite database in local environment
+            table_name (string): A name for tweetdf in db
+
+    Returns:
+            X (dataframe): Training data containing tweets
+            y (dataframe): Test data containg labels
+            y.columns (list): disaster categories to predict
+    '''
     # load data from database
     engine = create_engine('sqlite:///'+database_filepath)
-    df = pd.read_sql('select * from labeled_messages ',con=engine)
+    tweetdf = pd.read_sql('select * from '+table_name,con=engine)
     # all columns besides related are binary; the 2 value is ambiguous
-    df = df[df['related']!=2]
-    X = df['message'].values
+    tweetdf = tweetdf[df['related']!=2]
+    X = tweetdf['message'].values
     # child alone has no positives
-    y = df.drop(['id','message','original','genre','child_alone'],axis=1).dropna(axis=1,how='all').copy()
+    y = tweetdf.drop(['id','message','original','genre','child_alone'],axis=1).dropna(axis=1,how='all').copy()
     return X, y, y.columns
 
 
 def tokenize(text):
-    """
-    """
-    
+    '''
+    Parameters:
+            text (string): A document to tokenize
+
+    Returns:
+            clean_tokens (dataframe): A list of tokens derived from text and cleaned
+    '''
+
     # initiate stop words
     stop_words = set(stopwords.words('english'))
 
@@ -120,8 +133,11 @@ def tokenize(text):
 
 
 def build_model():
-    """
-    """
+    '''
+
+    Returns:
+            pipeline (pipeline object): A multioutput classifier to predict disaster categories
+    '''
 
     pipeline= Pipeline([
             ('features',FeatureUnion([
@@ -134,24 +150,34 @@ def build_model():
     return pipeline
 
 
-def evaluate_model(model, X_test, Y_test, category_names):
-    """
-    """
+def evaluate_model(model, X_test, y_test, category_names):
+    '''
+    Parameters:
+            model (pipeline object): A multioutput classifier fit to predict disaster categories
+            X_test (dataframe): holdout data containting documents
+            y_test (dataframe): holdout data contains labels for X_test
+            category_names (list): disaster response categories
+    '''
     y_pred_proba = model.predict_proba(X_test)
     i=0
     for col in category_names:
         print(col)
         if i ==0:
-            print(classification_report(Y_test[col],pd.DataFrame(
+            print(classification_report(y_test[col],pd.DataFrame(
             y_pred_proba[i][:,1:],columns=['proba']).proba.map(lambda x: 1 if x>=.55 else 0)))
         else:
-            print(classification_report(Y_test[col],pd.DataFrame(
+            print(classification_report(y_test[col],pd.DataFrame(
                 y_pred_proba[i][:,1:],columns=['proba']).proba.map(lambda x: 1 if x>=.35 else 0)))
         i+=1
     return
 
 
 def save_model(model, model_filepath):
+    """
+    Parameters:
+        model (pipeline object): A multioutput classifier fit to predict disaster categories
+        model_filepath (string): file path to store pickled model locally
+    """
     joblib.dump(model, model_filepath)
     return
 
@@ -161,7 +187,7 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, Y, category_names = load_data(database_filepath)
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2)
+        X_train, X_test, Y_train, y_test = train_test_split(X, Y, test_size=0.2)
 
         print('Building model...')
         model = build_model()
@@ -170,7 +196,7 @@ def main():
         model.fit(X_train, Y_train)
 
         print('Evaluating model...')
-        evaluate_model(model, X_test, Y_test, category_names)
+        evaluate_model(model, X_test, y_test, category_names)
 
         print('Saving model...\n    MODEL: {}'.format(model_filepath))
         save_model(model, model_filepath)
