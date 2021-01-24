@@ -123,35 +123,48 @@ model = joblib.load("../models/logr_multi.pkl")
 app = Flask(__name__)
 @app.route('/')
 @app.route('/index')
-def index():
 
+def index():
+    """
+    Returns:
+            render_template (flask method): contains data required to render visualizations
+    """
+
+
+    graphs = []
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
+    genre_counts = df.groupby('genre')['message'].count().reset_index().sort_values(
+        'message',ascending=False)
+    genre_names = list(genre_counts.genre)
 
-    # create visuals
-    # TODO: Below is an example - modify to create your own visuals
-    graphs = [
-        {
-            'data': [
-                Bar(
-                    x=genre_names,
-                    y=genre_counts
+    graph_one=[]
+    graph_one.append(
+      Bar(
+      x = genre_counts.message.tolist(),
+      y = genre_names)
+    )
+
+    layout_one = dict(title = 'Distribution of Message Genres',
+                xaxis = dict(title = 'Count',),
+                yaxis = dict(title = 'Genre'),
                 )
-            ],
+    graphs.append(dict(data=graph_one, layout=layout_one))
 
-            'layout': {
-                'title': 'Distribution of Message Genres',
-                'yaxis': {
-                    'title': "Count"
-                },
-                'xaxis': {
-                    'title': "Genre"
-                }
-            }
-        }
-    ]
+    most_common_categories = Y.sum().sort_values(ascending=False).head()
+
+    graph_two = []
+    graph_two.append(
+      Bar(
+      x =list(most_common_categories.values),
+      y = list(most_common_categories.index))
+    )
+
+    layout_two = dict(title = 'Most Common Categories in Training Data',
+                xaxis = dict(title = 'Count',),
+                yaxis = dict(title = 'Category'),
+                )
+    graphs.append(dict(data=graph_two, layout=layout_two))
 
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
@@ -160,13 +173,14 @@ def index():
     # render web page with plotly graphs
     return render_template('master.html', ids=ids, graphJSON=graphJSON)
 
+
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
     '''
 
     Returns:
-            render_template (): contains data required to build visualizations
+            render_template (flask method): contains data required to render visualizations
     '''
     # save user input in query
     query = request.args.get('query', '')
