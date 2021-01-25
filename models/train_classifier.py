@@ -25,7 +25,7 @@ from spellchecker import SpellChecker
 from title_transformer import TitleCount
 
 
-def load_data(database_filepath,table_name='labeled_messages')):
+def load_data(database_filepath,table_name='labeled_messages'):
     '''
     Parameters:
             database_filepath (string): A filepath to a sqlite database in local environment
@@ -40,7 +40,9 @@ def load_data(database_filepath,table_name='labeled_messages')):
     engine = create_engine('sqlite:///'+database_filepath)
     tweetdf = pd.read_sql('select * from '+table_name,con=engine)
     # all columns besides related are binary; the 2 value is ambiguous
-    tweetdf = tweetdf[df['related']!=2]
+    tweetdf = tweetdf[tweetdf['related']!=2]
+    # shuffle data
+    tweetdf = tweetdf.sample(frac=1)
     X = tweetdf['message'].values
     # child alone has no positives
     y = tweetdf.drop(['id','message','original','genre','child_alone'],axis=1).dropna(axis=1,how='all').copy()
@@ -132,20 +134,42 @@ def tokenize(text):
     return clean_tokens
 
 
-def build_model():
+def build_model(X_train, y_train):
     '''
+    Parameters:
+            X_train (dataframe): training data containting documents
+            y_train (dataframe): training data contains labels
 
     Returns:
             pipeline (pipeline object): A multioutput classifier to predict disaster categories
     '''
+    # instantiate pipeline
+    #pipeline = Pipeline(steps=[('vect', TfidfVectorizer(tokenizer=tokenize)),(
+    #    'clf',MultiOutputClassifier(LogisticRegression(solver='liblinear',max_iter=1000)))])
 
-    pipeline= Pipeline([
-            ('features',FeatureUnion([
-                ("vect", TfidfVectorizer(tokenizer=tokenize,min_df=.005,ngram_range=(1,2))),
-                ('title',TitleCount())])),
-            ('clf',MultiOutputClassifier(LogisticRegression(solver='liblinear',max_iter=1000,
-                                                            C=np.logspace(-4, 4, 4)[2],penalty='l2')))
-        ])
+    #parameters = {
+    #          'vect__use_idf':[True,False],
+#              'clf__estimator__C':[np.logspace(-4, 4, 4)]}
+
+    # create grid search object
+#    cv = GridSearchCV(pipeline, param_grid=parameters)
+
+    # gridsearch will take hours training on full dataset
+#    cv.fit(X_train, y_train)
+
+    optimal_C = np.logspace(-4, 4, 4)[2]#cv.best_params_['clf__estimator__C']
+    idf_bool = True#cv.best_params_['vect__use_idf']
+
+
+    # add gs parameters to pipeline
+    pipeline = Pipeline([
+        ('features',FeatureUnion([
+            ("vect", TfidfVectorizer(tokenizer=tokenize,use_idf=idf_bool,min_df=.005,
+                ngram_range=(1,2))),
+            ('title',TitleCount())])),
+        ('clf',MultiOutputClassifier(LogisticRegression(solver='liblinear',max_iter=1000,
+                                                        C=optimal_C),n_jobs=-1))
+    ])
 
     return pipeline
 
@@ -186,14 +210,14 @@ def main():
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
-        X, Y, category_names = load_data(database_filepath)
-        X_train, X_test, Y_train, y_test = train_test_split(X, Y, test_size=0.2)
+        X, y, category_names = load_data(database_filepath)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
 
         print('Building model...')
-        model = build_model()
+        model = build_model(X_train, y_train)
 
         print('Training model...')
-        model.fit(X_train, Y_train)
+        model.fit(X_train, y_train)
 
         print('Evaluating model...')
         evaluate_model(model, X_test, y_test, category_names)
