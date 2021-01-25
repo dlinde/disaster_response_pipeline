@@ -184,13 +184,21 @@ def go():
     '''
     # save user input in query
     query = request.args.get('query', '')
-    # convert the predictions to a dataframe then predict true for preds >.35, false otherwise, yielding a series
-    classification_labels = pd.DataFrame([model.predict_proba([query])],columns=Y.columns).T[0].map(
-        lambda x: 1 if x[0][1]>.35 else 0)
+    # convert the predictions to a dataframe
+    classification_labels = pd.DataFrame([pipeline_union.predict_proba([query])],columns=Y.columns).T[0].reset_index()
+    classification_labels.columns=['category','proba']
+    #predict true for any related pred over .55
+    mask = classification_labels.category=='related'
+    classification_labels.loc[classification_labels[mask].index,'proba']=classification_labels.loc[
+        classification_labels[mask].index,'proba'].map(lambda x: 1 if x[0][1]>.55 else 0)
+    #and true for any othe pred >.35
+    mask = classification_labels.category!='related'
+    classification_labels.loc[classification_labels[mask].index,'proba']=classification_labels.loc[
+        classification_labels[mask].index,'proba'].map(lambda x: 1 if x[0][1]>.35 else 0)
+
     # sort ascending so positive preds appear first
-    classification_labels.sort_values(ascending=False,inplace=True)
-    # convert to dictionary and add child alone category, which had no cases in sample
-    classification_results = dict(zip(classification_labels.index, classification_labels.values))
+    classification_labels.sort_values(by='proba',ascending=False,inplace=True)
+
     # no instances of child_alone in dataset so prediction always 0
     classification_results['child_alone']=0
 
