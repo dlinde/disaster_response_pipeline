@@ -50,6 +50,8 @@ def clean_data(tweetdf):
     tweetdf = pd.concat([tweetdf,categories],axis=1)
     # drop duplicates
     tweetdf.drop_duplicates(inplace=True)
+    #converts values to binary
+    tweetdf = tweetdf[tweetdf['related']!=2]
     return tweetdf
 
 def save_data(tweetdf, database_filename, table_name='labeled_messages'):
