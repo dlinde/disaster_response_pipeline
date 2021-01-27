@@ -62,7 +62,7 @@ def save_data(tweetdf, database_filename, table_name='labeled_messages'):
             table_name (string): A name for tweetdf in db
     '''
     engine = create_engine('sqlite:///'+database_filename)
-    tweetdf.to_sql(table_name, engine, index=False)
+    tweetdf.to_sql(table_name, engine, index=False, if_exists='replace')
     return
 
 
