@@ -3,22 +3,25 @@
 ### Table of Contents
 
 1. [Installation](#installation)
-2. [Instruction](#instructions)
+2. [Instructions](#instructions)
 3. [Project Motivation](#motivation)
 4. [File Descriptions](#files)
 5. [Licensing, Authors, and Acknowledgements](#licensing)
 
 ## Installation <a name="installation"></a>
 
-Beyond libraries in the Anaconda distribution of Python, running the python files require language detection  (googletrans, langdetect) and spell checking (spellchecker) packages.
+Beyond libraries in the Anaconda distribution of Python, running the python files require language detection  (googletrans, langdetect) and spell checking (spellchecker) packages. You can install these packages in your terminal using
+`pip install googletrans`
+`pip install langdetect`
+`pip install pyspellchecker`
 
 ## Instructions:
 
 1. Clone the repository
 2. Because the repo contains a database as well as a model object, you can skip to step 4 if you prefer. But to run the cleaning script locally to yield a database, in the data directory, run the following command, adding the filepaths of the messages and categories datasets (also in the data directory) as the first and second argument respectively, as well as the filepath of the database to save the cleaned data to as the third argument.
-    `python process_data.py`
+    `python process_data.py disaster_messages.csv disaster_categories.csv DisasterResponse.db`
 3. In your local environment, in the models directory,  run the following command, adding the filepath of the disaster messages database as the first argument and the filepath of the pickle file to save the model to as the second argument. 
-    `python train_classifier.py`
+    `python train_classifier.py DisasterResponse.db logr_multi.pkl`
 4. In your local environment, run the following command in the app directory to run the web app.
     `python run.py`
 4. Go to http://0.0.0.0:3001/
