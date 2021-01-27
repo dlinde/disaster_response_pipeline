@@ -15,9 +15,13 @@ Beyond libraries in the Anaconda distribution of Python, running the python file
 ## Instructions:
 
 1. Clone the repository
-2. In your local environment, run the following command in the app's directory to run the web app.
+2. Because the repo contains a database as well as a model object, you can skip to step 4 if you prefer. But to run the cleaning script locally to yield a database, in the data directory, run the following command, adding the filepaths of the messages and categories datasets (also in the data directory) as the first and second argument respectively, as well as the filepath of the database to save the cleaned data to as the third argument.
+    `python process_data.py`
+3. In your local environment, in the models directory,  run the following command, adding the filepath of the disaster messages database as the first argument and the filepath of the pickle file to save the model to as the second argument. 
+    `python train_classifier.py`
+4. In your local environment, run the following command in the app directory to run the web app.
     `python run.py`
-3. Go to http://0.0.0.0:3001/
+4. Go to http://0.0.0.0:3001/
 
 ## Project Motivation<a name="motivation"></a>
 
