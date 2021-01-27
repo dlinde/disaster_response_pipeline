@@ -141,8 +141,8 @@ def index():
     graph_one=[]
     graph_one.append(
       Bar(
-      x = genre_counts.message.tolist(),
-      y = genre_names)
+      x = genre_names,
+      y = genre_counts.message.tolist())
     )
 
     layout_one = dict(title = 'Distribution of Message Genres',
@@ -156,9 +156,9 @@ def index():
     graph_two = []
     graph_two.append(
       Bar(
-      x =list(most_common_categories.values),
-      y = list(most_common_categories.index))
-    )
+      x = list(most_common_categories.index),
+      y =list(most_common_categories.values)
+    ))
 
     layout_two = dict(title = 'Most Common Categories in Training Data',
                 xaxis = dict(title = 'Count',),
