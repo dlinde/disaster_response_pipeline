@@ -39,8 +39,6 @@ def load_data(database_filepath,table_name='labeled_messages'):
     # load data from database
     engine = create_engine('sqlite:///'+database_filepath)
     tweetdf = pd.read_sql('select * from '+table_name,con=engine)
-    # all columns besides related are binary; the 2 value is ambiguous
-    tweetdf = tweetdf[tweetdf['related']!=2]
     # shuffle data
     tweetdf = tweetdf.sample(frac=1)
     X = tweetdf['message'].values
@@ -144,21 +142,21 @@ def build_model(X_train, y_train):
             pipeline (pipeline object): A multioutput classifier to predict disaster categories
     '''
     # instantiate pipeline
-    #pipeline = Pipeline(steps=[('vect', TfidfVectorizer(tokenizer=tokenize)),(
-    #    'clf',MultiOutputClassifier(LogisticRegression(solver='liblinear',max_iter=1000)))])
+    pipeline = Pipeline(steps=[('vect', TfidfVectorizer(tokenizer=tokenize)),(
+        'clf',MultiOutputClassifier(LogisticRegression(solver='liblinear',max_iter=1000)))])
 
-    #parameters = {
-    #          'vect__use_idf':[True,False],
-#              'clf__estimator__C':[np.logspace(-4, 4, 4)]}
+    parameters = {
+              'vect__use_idf':[True,False],
+              'clf__estimator__C':[np.logspace(-4, 4, 4)]}
 
     # create grid search object
-#    cv = GridSearchCV(pipeline, param_grid=parameters)
+    cv = GridSearchCV(pipeline, param_grid=parameters)
 
-    # gridsearch will take hours training on full dataset
-#    cv.fit(X_train, y_train)
+    # gridsearch can take hours training on full dataset
+    cv.fit(X_train, y_train)
 
-    optimal_C = np.logspace(-4, 4, 4)[2]#cv.best_params_['clf__estimator__C']
-    idf_bool = True#cv.best_params_['vect__use_idf']
+    optimal_C = cv.best_params_['clf__estimator__C']#np.logspace(-4, 4, 4)[2]
+    idf_bool = cv.best_params_['vect__use_idf']#True#
 
 
     # add gs parameters to pipeline
@@ -211,7 +209,7 @@ def main():
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
         X, y, category_names = load_data(database_filepath)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
         print('Building model...')
         model = build_model(X_train, y_train)
