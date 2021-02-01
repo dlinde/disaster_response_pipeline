@@ -10,7 +10,7 @@
 
 ## Installation <a name="installation"></a>
 
-Beyond libraries in the Anaconda distribution of Python, running the python files require language detection  (googletrans, langdetect) and spell checking (spellchecker) packages. You can install these packages in your terminal using
+Because many of the libraries I used may be dated by the time you use this application, I recommend creating a virtual environment and then installing the libraries and versions specified in the requirements.txt. Alternatively, if you were to run all files from the start, you'd find that most libraries are included in the Anaconda distribution of Python, excepting those packages used for language detection (googletrans, langdetect) and spell checking (spellchecker). You can install these packages in your terminal using
 `pip install googletrans`
 `pip install langdetect`
 `pip install pyspellchecker`
