@@ -37,7 +37,7 @@ def load_data(database_filepath,table_name='labeled_messages'):
             y.columns (list): disaster categories to predict
     '''
     # load data from database
-    engine = create_engine('sqlite:///'+database_filepath)
+    engine = create_engine('sqlite:///../data/'+database_filepath)
     tweetdf = pd.read_sql('select * from '+table_name,con=engine)
     # shuffle data
     tweetdf = tweetdf.sample(frac=1)
